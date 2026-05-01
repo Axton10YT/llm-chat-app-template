@@ -3,17 +3,22 @@
  */
 export interface Env {
 	/**
-	 * Cloudflare Account ID for AI REST API calls.
+	 * Workers AI binding — routes to external providers via AI Gateway.
 	 */
-	CF_ACCOUNT_ID: string;
+	AI: Ai;
 
 	/**
-	 * Cloudflare API Token with AI permissions.
+	 * Your AI Gateway ID (from the gateway URL in the dashboard).
 	 */
-	CF_API_TOKEN: string;
+	CF_GATEWAY_ID: string;
 
 	/**
-	 * Binding for static assets.
+	 * Your AI Gateway auth token (cfut_... key from gateway settings).
+	 */
+	CF_AIG_TOKEN: string;
+
+	/**
+	 * Static assets binding.
 	 */
 	ASSETS: { fetch: (request: Request) => Promise<Response> };
 }
