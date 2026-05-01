@@ -11,7 +11,7 @@ import { Env, ChatMessage } from "./types";
 
 // Model ID for Workers AI model
 // https://developers.cloudflare.com/workers-ai/models/
-const MODEL_ID = "@cf/xai/grok-3-fast";
+const MODEL_ID = "@anthropic/claude-3-5-haiku-20241022";
 
 // Default system prompt
 const SYSTEM_PROMPT =
