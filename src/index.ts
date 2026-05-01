@@ -1,10 +1,11 @@
 /**
  * LLM Chat Application
- * Uses Cloudflare AI REST API (not Workers AI binding)
+ * Uses Cloudflare's unified AI inference layer with authenticated AI Gateway.
  */
 import { Env, ChatMessage } from "./types";
 
-const MODEL_ID = "@anthropic/claude-3-5-haiku";
+const MODEL_ID = "anthropic/claude-sonnet-4-5";
+
 const SYSTEM_PROMPT =
 	"You are a helpful, friendly assistant. Provide concise and accurate responses. Follow the user's requests at all times.";
 
@@ -40,32 +41,22 @@ async function handleChatRequest(
 			messages.unshift({ role: "system", content: SYSTEM_PROMPT });
 		}
 
-		const response = await fetch(
-			`https://api.cloudflare.com/client/v4/accounts/${env.CF_ACCOUNT_ID}/ai/run/${MODEL_ID}`,
+		const stream = await env.AI.run(
+			MODEL_ID,
 			{
-				method: "POST",
-				headers: {
-					Authorization: `Bearer ${env.CF_API_TOKEN}`,
-					"Content-Type": "application/json",
+				messages,
+				max_tokens: 1024,
+				stream: true,
+			},
+			{
+				gateway: {
+					id: env.CF_GATEWAY_ID,
+					authorization: env.CF_AIG_TOKEN,
 				},
-				body: JSON.stringify({
-					messages,
-					max_tokens: 1024,
-					stream: true,
-				}),
 			},
 		);
 
-		if (!response.ok) {
-			const err = await response.text();
-			console.error("Cloudflare AI error:", err);
-			return new Response(JSON.stringify({ error: err }), {
-				status: response.status,
-				headers: { "content-type": "application/json" },
-			});
-		}
-
-		return new Response(response.body, {
+		return new Response(stream, {
 			headers: {
 				"content-type": "text/event-stream; charset=utf-8",
 				"cache-control": "no-cache",
