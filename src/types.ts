@@ -1,12 +1,16 @@
 /**
  * Type definitions for the LLM chat application.
  */
-
 export interface Env {
 	/**
-	 * Binding for the Workers AI API.
+	 * Cloudflare Account ID for AI REST API calls.
 	 */
-	AI: Ai;
+	CF_ACCOUNT_ID: string;
+
+	/**
+	 * Cloudflare API Token with AI permissions.
+	 */
+	CF_API_TOKEN: string;
 
 	/**
 	 * Binding for static assets.
