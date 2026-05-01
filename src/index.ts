@@ -8,15 +8,12 @@
  * @license MIT
  */
 import { Env, ChatMessage } from "./types";
-
 // Model ID for Workers AI model
 // https://developers.cloudflare.com/workers-ai/models/
 const MODEL_ID = "@anthropic/claude-3-5-haiku-20241022";
-
 // Default system prompt
 const SYSTEM_PROMPT =
 	"You are a helpful, friendly assistant. Provide concise and accurate responses. Follow the user's requests at all times.";
-
 export default {
 	/**
 	 * Main request handler for the Worker
@@ -27,28 +24,23 @@ export default {
 		ctx: ExecutionContext,
 	): Promise<Response> {
 		const url = new URL(request.url);
-
 		// Handle static assets (frontend)
 		if (url.pathname === "/" || !url.pathname.startsWith("/api/")) {
 			return env.ASSETS.fetch(request);
 		}
-
 		// API Routes
 		if (url.pathname === "/api/chat") {
 			// Handle POST requests for chat
 			if (request.method === "POST") {
 				return handleChatRequest(request, env);
 			}
-
 			// Method not allowed for other request types
 			return new Response("Method not allowed", { status: 405 });
 		}
-
 		// Handle 404 for unmatched routes
 		return new Response("Not found", { status: 404 });
 	},
 } satisfies ExportedHandler<Env>;
-
 /**
  * Handles chat API requests
  */
@@ -61,12 +53,10 @@ async function handleChatRequest(
 		const { messages = [] } = (await request.json()) as {
 			messages: ChatMessage[];
 		};
-
 		// Add system prompt if not present
 		if (!messages.some((msg) => msg.role === "system")) {
 			messages.unshift({ role: "system", content: SYSTEM_PROMPT });
 		}
-
 		const stream = await env.AI.run(
 			MODEL_ID,
 			{
@@ -74,16 +64,7 @@ async function handleChatRequest(
 				max_tokens: 1024,
 				stream: true,
 			},
-			{
-				// Uncomment to use AI Gateway
-				// gateway: {
-				//   id: "YOUR_GATEWAY_ID", // Replace with your AI Gateway ID
-				//   skipCache: false,      // Set to true to bypass cache
-				//   cacheTtl: 3600,        // Cache time-to-live in seconds
-				// },
-			},
 		);
-
 		return new Response(stream, {
 			headers: {
 				"content-type": "text/event-stream; charset=utf-8",
