@@ -1,71 +1,71 @@
 /**
- * LLM Chat Application Template
- *
- * A simple chat application using Cloudflare Workers AI.
- * This template demonstrates how to implement an LLM-powered chat interface with
- * streaming responses using Server-Sent Events (SSE).
- *
- * @license MIT
+ * LLM Chat Application
+ * Uses Cloudflare AI REST API (not Workers AI binding)
  */
 import { Env, ChatMessage } from "./types";
-// Model ID for Workers AI model
-// https://developers.cloudflare.com/workers-ai/models/
-const MODEL_ID = "@anthropic/claude-3-5-haiku-20241022";
-// Default system prompt
+
+const MODEL_ID = "@anthropic/claude-3-5-haiku";
 const SYSTEM_PROMPT =
 	"You are a helpful, friendly assistant. Provide concise and accurate responses. Follow the user's requests at all times.";
+
 export default {
-	/**
-	 * Main request handler for the Worker
-	 */
 	async fetch(
 		request: Request,
 		env: Env,
 		ctx: ExecutionContext,
 	): Promise<Response> {
 		const url = new URL(request.url);
-		// Handle static assets (frontend)
-		if (url.pathname === "/" || !url.pathname.startsWith("/api/")) {
-			return env.ASSETS.fetch(request);
-		}
-		// API Routes
+
 		if (url.pathname === "/api/chat") {
-			// Handle POST requests for chat
 			if (request.method === "POST") {
 				return handleChatRequest(request, env);
 			}
-			// Method not allowed for other request types
 			return new Response("Method not allowed", { status: 405 });
 		}
-		// Handle 404 for unmatched routes
-		return new Response("Not found", { status: 404 });
+
+		return env.ASSETS.fetch(request);
 	},
 } satisfies ExportedHandler<Env>;
-/**
- * Handles chat API requests
- */
+
 async function handleChatRequest(
 	request: Request,
 	env: Env,
 ): Promise<Response> {
 	try {
-		// Parse JSON request body
 		const { messages = [] } = (await request.json()) as {
 			messages: ChatMessage[];
 		};
-		// Add system prompt if not present
+
 		if (!messages.some((msg) => msg.role === "system")) {
 			messages.unshift({ role: "system", content: SYSTEM_PROMPT });
 		}
-		const stream = await env.AI.run(
-			MODEL_ID,
+
+		const response = await fetch(
+			`https://api.cloudflare.com/client/v4/accounts/${env.CF_ACCOUNT_ID}/ai/run/${MODEL_ID}`,
 			{
-				messages,
-				max_tokens: 1024,
-				stream: true,
+				method: "POST",
+				headers: {
+					Authorization: `Bearer ${env.CF_API_TOKEN}`,
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					messages,
+					max_tokens: 1024,
+					stream: true,
+				}),
 			},
 		);
-		return new Response(stream, {
+
+		if (!response.ok) {
+			const err = await response.text();
+			console.error("Cloudflare AI error:", err);
+			return new Response(JSON.stringify({ error: err }), {
+				status: response.status,
+				headers: { "content-type": "application/json" },
+			});
+		}
+
+		return new Response(response.body, {
 			headers: {
 				"content-type": "text/event-stream; charset=utf-8",
 				"cache-control": "no-cache",
