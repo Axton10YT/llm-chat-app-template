@@ -41,6 +41,12 @@ async function handleChatRequest(
 			messages.unshift({ role: "system", content: SYSTEM_PROMPT });
 		}
 
+		const gatewayId = env.CF_GATEWAY_ID || "default";
+		const gatewayOptions: Record<string, unknown> = { id: gatewayId };
+		if (env.CF_AIG_TOKEN) {
+			gatewayOptions.authorization = env.CF_AIG_TOKEN;
+		}
+
 		const stream = await env.AI.run(
 			MODEL_ID,
 			{
@@ -48,12 +54,7 @@ async function handleChatRequest(
 				max_tokens: 1024,
 				stream: true,
 			},
-			{
-				gateway: {
-					id: env.CF_GATEWAY_ID,
-					authorization: env.CF_AIG_TOKEN,
-				},
-			},
+			{ gateway: gatewayOptions },
 		);
 
 		return new Response(stream, {
@@ -65,8 +66,9 @@ async function handleChatRequest(
 		});
 	} catch (error) {
 		console.error("Error processing chat request:", error);
+		const message = error instanceof Error ? error.message : String(error);
 		return new Response(
-			JSON.stringify({ error: "Failed to process request" }),
+			JSON.stringify({ error: message }),
 			{
 				status: 500,
 				headers: { "content-type": "application/json" },
