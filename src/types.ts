@@ -8,14 +8,14 @@ export interface Env {
 	AI: Ai;
 
 	/**
-	 * Your AI Gateway ID (from the gateway URL in the dashboard).
+	 * Optional AI Gateway ID (from the gateway URL in the dashboard).
 	 */
-	CF_GATEWAY_ID: string;
+	CF_GATEWAY_ID?: string;
 
 	/**
-	 * Your AI Gateway auth token (cfut_... key from gateway settings).
+	 * Optional AI Gateway auth token (cfut_... key from gateway settings).
 	 */
-	CF_AIG_TOKEN: string;
+	CF_AIG_TOKEN?: string;
 
 	/**
 	 * Static assets binding.

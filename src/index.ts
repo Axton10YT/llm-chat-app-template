@@ -41,6 +41,14 @@ async function handleChatRequest(
 			messages.unshift({ role: "system", content: SYSTEM_PROMPT });
 		}
 
+		const runOptions: Record<string, unknown> = {};
+		if (env.CF_GATEWAY_ID) {
+			runOptions.gateway = {
+				id: env.CF_GATEWAY_ID,
+				...(env.CF_AIG_TOKEN && { authorization: env.CF_AIG_TOKEN }),
+			};
+		}
+
 		const stream = await env.AI.run(
 			MODEL_ID,
 			{
@@ -48,12 +56,7 @@ async function handleChatRequest(
 				max_tokens: 1024,
 				stream: true,
 			},
-			{
-				gateway: {
-					id: env.CF_GATEWAY_ID,
-					authorization: env.CF_AIG_TOKEN,
-				},
-			},
+			runOptions,
 		);
 
 		return new Response(stream, {
